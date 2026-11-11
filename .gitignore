@@ -1,0 +1,15 @@
+# 打包 / 签名产物：私钥绝不能进仓库
+*.pem
+*.crx
+*.zip
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 调试输出
+*.log
+probe*.log

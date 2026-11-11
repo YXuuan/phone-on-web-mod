@@ -1,0 +1,36 @@
+{
+  "name": "Phone On Web 增强版 | Android in browser",
+  "description": "用浏览器控制安卓手机（无需 root）：投屏、桌面版网页浏览、剪贴板双向同步、下载自动回传。",
+  "homepage_url": "http://browserlify.com/?from=webstore_chrome",
+  "version": "1.4.2",
+  "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0QmYlcP47gKBXSCMmXI5fat12xeAPjE3H5rR86RRdzDrvRl8MkQspOnZk5ATvf3tPSHwJkJbAXZAxyNf7G4MRpBEWMAYRnNVhyCPCWvg7RrBnz15UGkD3tITASKCaFbct2HheFWShVzeXuLqF7A9yGrEMlqas4MGU1z7DIIX2lsx/gliMR7tvOLnW/JBltzR61OH7Q49tV7MBj4UciB8JNk7TQGmomNXZKJZghVfgDc9UUf0xXBG6XDFyg86Fb1tJCIQ7Ca8+USDD1YK7/j6IzevCOYZTbLv2R42y/uQB5sNUuYBnKGt5O6uut/pu1CRIy/SQk3GTnQKA7b257ioAQIDAQAB",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite",
+    "downloads",
+    "clipboardRead"
+  ],
+  "icons": {
+    "64": "icons/icon_64.png",
+    "96": "icons/icon_64.png",
+    "128": "icons/icon_64.png"
+  },
+  "action": {
+    "default_title": "Using android in browser"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*",
+        "assets/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

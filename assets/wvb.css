@@ -1,0 +1,459 @@
+/* wvb.css — 扩展自带界面的样式。
+ *
+ * 界面本体写在 index.html 里（静态节点），脚本只负责把它们停靠到原版界面里：
+ *   #wvb-bar    搬进"画面那一列"，作为第一条子节点（把画面上沿往下顶一点）
+ *   #wvb-status 接在画面块正下方，高度固定，只换文字
+ *   #wvb-side-* 搬进原版侧栏按钮所在的那一列
+ * 所以这里不需要 fixed 定位，尺寸与位置全部交给原版的布局容器。
+ */
+
+:root {
+  --wvb-font: Nunito, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  --wvb-line: #d1d5db;
+  --wvb-text: #374151;
+  --wvb-muted: #6b7280;
+  --wvb-brand: #0d9488;
+  --wvb-danger: #b91c1c;
+  --wvb-bar-h: 34px;
+  --wvb-status-h: 22px;
+  --wvb-z: 2147483000;
+}
+
+/* ---------- 屏幕上方操作栏 ---------- */
+#wvb-bar {
+  position: relative;
+  z-index: 2;
+  display: none;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--wvb-bar-h);
+  margin: 0 0 4px;
+  padding: 5px 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-family: var(--wvb-font);
+}
+
+/* ---------- 操作栏控件 ---------- */
+.wvb-btn {
+  border: 1px solid var(--wvb-line);
+  background: #fff;
+  border-radius: 5px;
+  padding: 0 7px;
+  height: 22px;
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+  color: var(--wvb-text);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  font-family: inherit;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.wvb-btn:hover {
+  background: #f3f4f6;
+}
+
+.wvb-btn:active {
+  background: #e5e7eb;
+}
+
+.wvb-btn:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.45);
+  outline-offset: 1px;
+}
+
+/* 选中态（桌面 / 横屏 / 网页浏览）：与原生侧栏按钮的 bg-gray-300 一致 */
+.wvb-btn[data-on="1"] {
+  background: #d1d5db;
+  border-color: #d1d5db;
+  color: #1f2937;
+}
+
+.wvb-btn[data-on="1"]:hover {
+  background: #cbd5e1;
+}
+
+.wvb-btn--icon {
+  padding: 0 8px;
+}
+
+.wvb-btn--tiny {
+  padding: 0 6px;
+  min-width: 22px;
+}
+
+.wvb-btn--primary {
+  background: var(--wvb-brand);
+  border-color: var(--wvb-brand);
+  color: #fff;
+}
+
+.wvb-btn--primary:hover {
+  background: #0f766e;
+  border-color: #0f766e;
+}
+
+.wvb-btn--danger {
+  border-color: #ef4444;
+  color: var(--wvb-danger);
+}
+
+.wvb-btn--ghost {
+  border: none;
+  background: transparent;
+  cursor: default;
+  padding: 0 4px;
+  min-width: 38px;
+  color: var(--wvb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wvb-input {
+  flex: 1 1 100px;
+  min-width: 70px;
+  border: 1px solid var(--wvb-line);
+  border-radius: 5px;
+  padding: 0 7px;
+  height: 22px;
+  font-size: 12px;
+  line-height: 20px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: var(--wvb-text);
+  background: #fff;
+}
+
+.wvb-input:focus {
+  border-color: var(--wvb-brand);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.12);
+}
+
+#wvb-url {
+  flex: 1 1 90px;
+  min-width: 60px;
+}
+
+#wvb-kbd {
+  flex: 1 1 110px;
+  min-width: 80px;
+  background: #f9fafb;
+}
+
+/* ---------- 状态行：接在画面下方，高度固定，只换文字 ---------- */
+#wvb-status {
+  position: relative;
+  z-index: 1;
+  display: none;
+  flex: 0 0 auto;
+  width: 100%;
+  height: var(--wvb-status-h);
+  line-height: var(--wvb-status-h);
+  padding: 0 8px;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: var(--wvb-font);
+  font-size: 11px;
+  color: var(--wvb-muted);
+  background: #fff;
+  border-top: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+#wvb-status[data-on="1"] {
+  display: block;
+}
+
+#wvb-status[data-tone="ok"] {
+  color: #0f766e;
+}
+
+#wvb-status[data-tone="err"] {
+  color: var(--wvb-danger);
+}
+
+/* ---------- 侧栏两个按钮 ----------
+   外观照原版侧栏按钮：py-1 px-1 + 24px 图标 + rounded，
+   text-gray-500 / hover:bg-gray-400 / 选中 bg-gray-300。
+   搬进侧栏之前先藏着，免得在页面底部露一下。 */
+
+[data-wvb-btn] {
+  display: none;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  line-height: 0;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+aside [data-wvb-btn] {
+  display: block;
+}
+
+aside [data-wvb-btn]:hover {
+  color: #1f2937;
+  background: #9ca3af;
+}
+
+aside [data-wvb-btn]:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.45);
+  outline-offset: 1px;
+}
+
+aside [data-wvb-btn][data-on="1"] {
+  color: #1f2937;
+  background: #d1d5db;
+}
+
+.wvb-side-ico,
+.wvb-side-ico svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+/* 原版侧栏是分两批渲染的（先 5 个、后 2 个）。扩展的两个按钮没到位之前整列先
+   不显示，避免"5 个先出来、2 个后补上"的跳动；1.2 秒后无论如何都放出来，
+   防止注入失败时侧栏一直是空的。 */
+aside > div:has(> button:not([data-wvb-btn])) {
+  visibility: hidden;
+  animation: wvb-side-in 0s linear 1.2s forwards;
+}
+
+aside > div:has(> button[data-wvb-btn]) {
+  visibility: visible;
+  animation: none;
+}
+
+@keyframes wvb-side-in {
+  to {
+    visibility: visible;
+  }
+}
+
+/* ---------- 设置弹窗 ---------- */
+#wvb-settings {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--wvb-z) + 12);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 24, 39, 0.55);
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: var(--wvb-font);
+}
+
+#wvb-settings[data-open="1"] {
+  display: flex;
+}
+
+.wvb-panel {
+  width: min(540px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 18px 12px;
+  box-shadow: 0 18px 48px rgba(17, 24, 39, 0.28);
+  box-sizing: border-box;
+  color: #111827;
+}
+
+.wvb-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wvb-panel-tip {
+  font-size: 11px;
+  color: var(--wvb-muted);
+  margin: 2px 0 6px;
+}
+
+/* 分组标题：中性灰 + 细横线，跟原版设置区的观感一致，不用品牌色抢眼 */
+.wvb-sec {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  margin: 16px 0 6px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.wvb-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.wvb-lab {
+  font-size: 12px;
+  color: var(--wvb-text);
+  flex: 0 0 132px;
+}
+
+.wvb-line input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--wvb-brand);
+}
+
+.wvb-line input[type="number"] {
+  flex: 0 0 120px;
+  max-width: 120px;
+  min-width: 0;
+}
+
+.wvb-line select,
+.wvb-line input[type="number"],
+.wvb-box {
+  border: 1px solid var(--wvb-line);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 18px;
+  box-sizing: border-box;
+  color: #111827;
+  background: #fff;
+  font-family: inherit;
+}
+
+.wvb-line select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wvb-hint {
+  font-size: 10px;
+  color: #9ca3af;
+  flex: 0 0 auto;
+}
+
+.wvb-note {
+  font-size: 10px;
+  color: #9ca3af;
+  margin: 2px 0 0;
+}
+
+/* 密钥编号：等宽、可截断，长度变化不撑破弹窗 */
+.wvb-key {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--wvb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#wvb-dirs {
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.wvb-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.wvb-footer button {
+  border: 1px solid var(--wvb-line);
+  background: #fff;
+  color: var(--wvb-text);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#wvb-save {
+  border-color: var(--wvb-brand);
+  background: var(--wvb-brand);
+  color: #fff;
+}
+
+/* ---------- 兼容投屏浮层（结构在 HTML 里，脚本只填画面） ---------- */
+#wvb-compat {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  z-index: calc(var(--wvb-z) - 10);
+  display: none;
+  overflow: hidden;
+  background: #0b1220;
+  box-sizing: border-box;
+}
+
+#wvb-compat[data-on="1"] {
+  display: block;
+}
+
+#wvb-compat-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+#wvb-compat-bar {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: rgba(17, 24, 39, 0.72);
+  color: #e5e7eb;
+  font: 11px/16px var(--wvb-font);
+  user-select: none;
+}
+
+#wvb-compat-bar button {
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  border-radius: 4px;
+  padding: 0 5px;
+  min-width: 18px;
+  height: 18px;
+  font-size: 11px;
+  line-height: 16px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#wvb-compat-fps {
+  margin-left: 2px;
+  opacity: 0.85;
+}

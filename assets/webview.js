@@ -4,6 +4,7 @@
 
 import { WebSocket, Cdp, listTargets, wsPathOf } from "./cdp-core.js";
 import { createCompatMirror } from "./compat.js";
+import { createFilePusher } from "./filepush.js";
 import { ensureAdbKey, adbKeyStatus, resetAdbKey } from "./adbkey.js";
 
 const DESKTOP_UA =
@@ -72,6 +73,7 @@ const state = {
   compatBusy: false,
   browserPkg: "", // 本次实际使用的手机浏览器包名（全屏策略 / 关闭时用）
   browserPref: "", // 上一次应用过的偏好，用来判断设置是否变了
+  fmPath: "", // 文件管理器最近打开的目录（拖入/粘贴文件时用作目标）
 };
 
 // ---------- 诊断（发布版默认关闭；需要时在控制台执行 localStorage.wvbDebug="1" 后刷新）----------
@@ -995,6 +997,49 @@ function sidebarHolder() {
   return el || native.parentElement;
 }
 
+// ---------- 原版「File Manager」：开没开、停在哪一级 ----------
+// 按钮文字里带 "File Manager"，展开时类名会变成 bg-gray-300 text-gray-800
+function sideButton(label) {
+  return [...document.querySelectorAll("aside button")].find(
+    (b) => !b.hasAttribute("data-wvb-btn") && (b.textContent || "").indexOf(label) >= 0
+  );
+}
+
+function fmOpen() {
+  const b = sideButton("File Manager");
+  return !!b && /bg-gray-300|text-gray-800/.test(b.className || "");
+}
+
+// 文件管理器每换一次目录都会调用 sync 层的 openDir()。它是 `pe.getFileManager()`
+// 每次新建的同一个小类的实例，所以只要改一次原型，组件里那个实例也跟着生效。
+// 这样不用猜 DOM、也不用猜面包屑，直接拿到它真正打开的绝对路径。
+let fmHooked = false;
+function hookFileManager() {
+  if (fmHooked) return true;
+  const pe = window.__pe;
+  if (!pe || typeof pe.getFileManager !== "function") return false;
+  let fm = null;
+  try {
+    fm = pe.getFileManager(); // 没连 scrcpy 时返回 undefined
+  } catch (e) {
+    return false;
+  }
+  if (!fm) return false;
+  const proto = Object.getPrototypeOf(fm);
+  if (!proto) return false;
+  const orig = proto.openDir;
+  if (typeof orig !== "function") return false;
+  proto.openDir = async function (p) {
+    const r = await orig.call(this, p); // 先在手机上真的打开，成功了才记
+    if (p && String(p).startsWith("/")) state.fmPath = String(p).replace(/\/+$/, "") || "/";
+    return r;
+  };
+  proto.__wvbFmHook = true;
+  fmHooked = true;
+  probe("fm hook ready");
+  return true;
+}
+
 // 两个按钮在同一个任务里塞进去：绘制只有一次，不会出现"5 个先出来、2 个后补上"
 function injectSidebarButtons() {
   const holder = sidebarHolder();
@@ -1063,6 +1108,24 @@ for (const type of GESTURE_EVENTS) {
     true
   );
 }
+
+// ---------- 文件投递：Ctrl+V（剪贴板是文件）/ 拖入窗口 ----------
+// 目标目录由 filepush 判定：文件管理器开着就用它当前目录，否则 /sdcard/Download。
+// 传完再刷媒体库，顺序写在 filepush.js 里。
+let pasteToken = 0; // 每次 Ctrl+V 一个号；文件粘贴会把它加一，作废文字粘贴
+const filePush = createFilePusher({
+  shell,
+  say,
+  probe,
+  ready: deviceReady,
+  device: () => (window.__pe && window.__pe.device) || null,
+  fmOpen,
+  fmPath: () => state.fmPath,
+  onFilePaste: () => {
+    pasteToken++; // 这一次 Ctrl+V 是文件，作废排队中的"文字粘贴"
+  },
+});
+filePush.install();
 
 // ---------- 界面节点：一次绑定；节点位置会被搬动，但引用不变 ----------
 function bindChrome() {
@@ -2153,9 +2216,15 @@ window.addEventListener(
       e.stopPropagation();
       guarded("复制", copyPhoneSelection);
     } else if (k === "v" && !inField) {
-      e.preventDefault();
-      e.stopPropagation();
-      guarded("粘贴", pasteToPhone);
+      // 剪贴板里可能是文件，也可能只是文字。这里不能先 preventDefault —— 那样浏览器
+      // 就不再派发 paste 事件，文件就送不出去了。改成"先让 paste 走一遍"：
+      // 文件那条链会 pasteToken++，一个 task 后这里发现被作废就什么都不做；
+      // 没人接管说明剪贴板是纯文字，再按老路子把文字打进手机。
+      const mine = ++pasteToken;
+      setTimeout(() => {
+        if (mine !== pasteToken) return;
+        guarded("粘贴", pasteToPhone);
+      }, 0);
     } else if (k === "a" && !inField) {
       e.preventDefault();
       e.stopPropagation();
@@ -2450,6 +2519,7 @@ setInterval(() => {
     syncCompat();
     refreshImeGate();
     injectSidebarButtons(); // Vue 重渲染把按钮冲掉时，这里兜一手
+    hookFileManager(); // scrcpy 连上后才能拿到文件管理器，拿到了就记它打开的目录
     syncChrome();
   } catch (e) {
     probe("tick fail " + (e && e.message));
@@ -2512,6 +2582,6 @@ ensureAdbKey()
 
 // 诊断模式（localStorage.wvbDebug="1"）下暴露内部方法，便于在控制台逐步复跑
 if (DEBUG) {
-  window.__wvb = { state, shell, cfgDirs, listRecentFiles, pollDownloads, pullFile, sendText, restart: startBackground };
+  window.__wvb = { state, shell, cfgDirs, listRecentFiles, pollDownloads, pullFile, sendText, pushFiles: filePush.pushFiles, targetDir: filePush.targetDir, restart: startBackground };
   probe("debug hooks ready");
 }
